@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'daily_expenditure_page.dart';
 import 'monthly_expenditure_page.dart';
 import 'total_expenditure_page.dart';
-import 'login_page.dart'; // Import your login page here
+import 'login_page.dart'; 
+import 'view_reminders_page.dart'; // Import the view reminders page
 
 class DashboardPage extends StatefulWidget {
   final String userEmail;
@@ -20,6 +22,59 @@ class _DashboardPageState extends State<DashboardPage> {
   String? email;
   String? bankName;
   double? monthlySalary;
+
+  final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
+      FlutterLocalNotificationsPlugin();
+
+  @override
+  void initState() {
+    super.initState();
+    _initializeNotifications();
+    _getUserData();
+    _getExpenditures();
+  }
+
+  Future<void> _initializeNotifications() async {
+    const AndroidInitializationSettings initializationSettingsAndroid =
+        AndroidInitializationSettings('app_icon');
+
+    const InitializationSettings initializationSettings =
+        InitializationSettings(
+      android: initializationSettingsAndroid,
+      iOS: null,
+      macOS: null,
+    );
+
+    await flutterLocalNotificationsPlugin.initialize(initializationSettings);
+  }
+
+  Future<void> _scheduleNotification(DateTime date, String reminderName) async {
+    const AndroidNotificationDetails androidPlatformChannelSpecifics =
+        AndroidNotificationDetails(
+      'reminder_channel',
+      'Reminder Notifications',
+      channelDescription: 'Channel for reminder notifications',
+      importance: Importance.max,
+      priority: Priority.high,
+      ticker: 'ticker',
+    );
+
+    const NotificationDetails platformChannelSpecifics =
+        NotificationDetails(android: androidPlatformChannelSpecifics);
+
+    var tz;
+    await flutterLocalNotificationsPlugin.zonedSchedule(
+      0,
+      'Reminder',
+      reminderName,
+      tz.TZDateTime.from(date, tz.local),
+      platformChannelSpecifics,
+      androidAllowWhileIdle: true,
+      uiLocalNotificationDateInterpretation:
+          UILocalNotificationDateInterpretation.absoluteTime,
+      matchDateTimeComponents: DateTimeComponents.time,
+    );
+  }
 
   Future<void> _getUserData() async {
     FirebaseFirestore firestore = FirebaseFirestore.instance;
@@ -49,13 +104,6 @@ class _DashboardPageState extends State<DashboardPage> {
     } catch (e) {
       print('Error retrieving expenditures: $e');
     }
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    _getUserData();
-    _getExpenditures();
   }
 
   void _showExpenditureDialog() {
@@ -108,6 +156,74 @@ class _DashboardPageState extends State<DashboardPage> {
               ),
             ],
           ),
+        );
+      },
+    );
+  }
+
+  void _showAddReminderDialog() {
+    TextEditingController nameController = TextEditingController();
+    DateTime selectedDate = DateTime.now();
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Add Reminder'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: nameController,
+                decoration: InputDecoration(labelText: 'Reminder Name'),
+              ),
+              SizedBox(height: 10),
+              ElevatedButton(
+                onPressed: () async {
+                  final DateTime? picked = await showDatePicker(
+                    context: context,
+                    initialDate: selectedDate,
+                    firstDate: DateTime.now(),
+                    lastDate: DateTime(2101),
+                  );
+                  if (picked != null && picked != selectedDate)
+                    setState(() {
+                      selectedDate = picked;
+                    });
+                },
+                child: Text('Select date'),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () async {
+                String reminderName = nameController.text;
+
+                if (reminderName.isNotEmpty) {
+                  await FirebaseFirestore.instance
+                      .collection('users')
+                      .doc(widget.userEmail)
+                      .collection('reminders')
+                      .add({
+                    'name': reminderName,
+                    'date': selectedDate,
+                  });
+
+                  _scheduleNotification(selectedDate, reminderName);
+
+                  Navigator.of(context).pop();
+                }
+              },
+              child: Text('Save'),
+            ),
+          ],
         );
       },
     );
@@ -241,6 +357,23 @@ class _DashboardPageState extends State<DashboardPage> {
           icon: Icon(Icons.logout),
           onPressed: _logout,
         ),
+        actions: [
+          IconButton(
+            icon: Icon(Icons.alarm),
+            onPressed: _showAddReminderDialog,
+          ),
+          IconButton(
+            icon: Icon(Icons.view_list),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => ViewRemindersPage(userEmail: widget.userEmail),
+                ),
+              );
+            },
+          ),
+        ],
       ),
       body: Padding(
         padding: EdgeInsets.all(16.0),

@@ -5,8 +5,8 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'daily_expenditure_page.dart';
 import 'monthly_expenditure_page.dart';
 import 'total_expenditure_page.dart';
-import 'login_page.dart'; 
-import 'view_reminders_page.dart'; // Import the view reminders page
+import 'login_page.dart';
+import 'view_reminders_page.dart';
 
 class DashboardPage extends StatefulWidget {
   final String userEmail;
@@ -218,10 +218,50 @@ class _DashboardPageState extends State<DashboardPage> {
 
                   _scheduleNotification(selectedDate, reminderName);
 
-                  Navigator.of(context).pop();
+                  _showSuccessDialog('Reminder added successfully.');
                 }
               },
               child: Text('Save'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _showErrorDialog(String message) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text("Error"),
+          content: Text(message),
+          actions: [
+            TextButton(
+              child: Text("OK"),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _showSuccessDialog(String message) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text("Success"),
+          content: Text(message),
+          actions: [
+            TextButton(
+              child: Text("OK"),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
             ),
           ],
         );
@@ -272,9 +312,29 @@ class _DashboardPageState extends State<DashboardPage> {
 
             return Card(
               child: ExpansionTile(
-                title: Text(
-                  month,
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                title: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      month,
+                      style:
+                          TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    ),
+                    IconButton(
+                      icon: Icon(Icons.delete, color: Colors.red),
+                      onPressed: () async {
+                        // Delete all expenditures for this month
+                        for (var expenditure in monthDetails) {
+                          await FirebaseFirestore.instance
+                              .collection('users')
+                              .doc(widget.userEmail)
+                              .collection('expenditures')
+                              .doc(expenditure['id'])
+                              .delete();
+                        }
+                      },
+                    ),
+                  ],
                 ),
                 children: monthDetails.map((expenditure) {
                   var details = expenditure['details'];
@@ -292,29 +352,39 @@ class _DashboardPageState extends State<DashboardPage> {
                         title: Text(
                             'Date: ${DateFormat('yyyy-MM-dd').format(date)}'),
                         subtitle: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: details.map<Widget>((detail) {
-                            return ListTile(
-                              title: Text(detail['name']),
-                              subtitle: Text('₹${detail['amount']}'),
-                              trailing: IconButton(
-                                icon: Icon(Icons.delete),
-                                onPressed: () async {
-                                  var docRef = FirebaseFirestore.instance
-                                      .collection('users')
-                                      .doc(widget.userEmail)
-                                      .collection('expenditures')
-                                      .doc(expenditure['id']);
-                                  var newDetails =
-                                      List<Map<String, dynamic>>.from(details)
-                                        ..remove(detail);
-                                  if (newDetails.isEmpty) {
-                                    await docRef.delete();
-                                  } else {
-                                    await docRef.update({
-                                      'details': newDetails,
-                                    });
-                                  }
-                                },
+                            return Padding(
+                              padding:
+                                  const EdgeInsets.symmetric(vertical: 4.0),
+                              child: Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text(detail['name']),
+                                  Text('₹${detail['amount']}'),
+                                  IconButton(
+                                    icon: Icon(Icons.delete),
+                                    onPressed: () async {
+                                      var docRef = FirebaseFirestore.instance
+                                          .collection('users')
+                                          .doc(widget.userEmail)
+                                          .collection('expenditures')
+                                          .doc(expenditure['id']);
+                                      var newDetails =
+                                          List<Map<String, dynamic>>.from(
+                                              details)
+                                            ..remove(detail);
+                                      if (newDetails.isEmpty) {
+                                        await docRef.delete();
+                                      } else {
+                                        await docRef.update({
+                                          'details': newDetails,
+                                        });
+                                      }
+                                    },
+                                  ),
+                                ],
                               ),
                             );
                           }).toList(),
@@ -351,6 +421,7 @@ class _DashboardPageState extends State<DashboardPage> {
     final currencyFormatter = NumberFormat.simpleCurrency(locale: 'en_IN');
 
     return Scaffold(
+      backgroundColor: Colors.grey[200],
       appBar: AppBar(
         title: Text('Dashboard'),
         leading: IconButton(
@@ -368,7 +439,8 @@ class _DashboardPageState extends State<DashboardPage> {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => ViewRemindersPage(userEmail: widget.userEmail),
+                  builder: (context) =>
+                      ViewRemindersPage(userEmail: widget.userEmail),
                 ),
               );
             },
@@ -380,15 +452,29 @@ class _DashboardPageState extends State<DashboardPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            if (name != null)
-              Text('Name: $name', style: TextStyle(fontSize: 18)),
-            if (email != null)
-              Text('Email: $email', style: TextStyle(fontSize: 18)),
-            if (bankName != null)
-              Text('Bank Name: $bankName', style: TextStyle(fontSize: 18)),
-            if (monthlySalary != null)
-              Text('Monthly Salary: ${currencyFormatter.format(monthlySalary)}',
-                  style: TextStyle(fontSize: 18)),
+            Card(
+              color: Colors.blue[50],
+              margin: EdgeInsets.symmetric(vertical: 8.0),
+              child: Padding(
+                padding: EdgeInsets.all(16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (name != null)
+                      Text('Name: $name', style: TextStyle(fontSize: 18)),
+                    if (email != null)
+                      Text('Email: $email', style: TextStyle(fontSize: 18)),
+                    if (bankName != null)
+                      Text('Bank Name: $bankName',
+                          style: TextStyle(fontSize: 18)),
+                    if (monthlySalary != null)
+                      Text(
+                          'Monthly Salary: ${currencyFormatter.format(monthlySalary)}',
+                          style: TextStyle(fontSize: 18)),
+                  ],
+                ),
+              ),
+            ),
             SizedBox(height: 16),
             Expanded(child: _buildExpenditureList()),
           ],

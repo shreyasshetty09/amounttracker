@@ -50,30 +50,61 @@ class _DataEntryPageState extends State<DataEntryPage> {
       appBar: AppBar(
         title: Text('Data Entry'),
       ),
-      body: Padding(
+      body: SingleChildScrollView(
         padding: EdgeInsets.all(16.0),
         child: Column(
           children: [
-            TextField(
-              controller: _nameController,
-              decoration: InputDecoration(labelText: "Name"),
-            ),
-            TextField(
-              controller: _emailController,
-              decoration: InputDecoration(labelText: "Email"),
-            ),
-            TextField(
-              controller: _bankNameController,
-              decoration: InputDecoration(labelText: "Bank Name"),
-            ),
-            TextField(
-              controller: _monthlySalaryController,
-              decoration: InputDecoration(labelText: "Monthly Salary"),
-              keyboardType: TextInputType.number,
-            ),
-            ElevatedButton(
-              onPressed: _storeUserData,
-              child: Text("Submit"),
+            Card(
+              margin: EdgeInsets.symmetric(vertical: 8.0),
+              child: Padding(
+                padding: EdgeInsets.all(16.0),
+                child: Column(
+                  children: [
+                    TextField(
+                      controller: _nameController,
+                      decoration: InputDecoration(
+                        labelText: "Name",
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                    SizedBox(height: 10),
+                    TextField(
+                      controller: _emailController,
+                      decoration: InputDecoration(
+                        labelText: "Email",
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                    SizedBox(height: 10),
+                    TextField(
+                      controller: _bankNameController,
+                      decoration: InputDecoration(
+                        labelText: "Bank Name",
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                    SizedBox(height: 10),
+                    TextField(
+                      controller: _monthlySalaryController,
+                      decoration: InputDecoration(
+                        labelText: "Monthly Salary",
+                        border: OutlineInputBorder(),
+                      ),
+                      keyboardType: TextInputType.number,
+                    ),
+                    SizedBox(height: 20),
+                    ElevatedButton(
+                      onPressed: _storeUserData,
+                      child: Text("Submit"),
+                      style: ElevatedButton.styleFrom(
+                        padding: EdgeInsets.symmetric(
+                            vertical: 12.0, horizontal: 24.0),
+                        textStyle: TextStyle(fontSize: 18),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ),
           ],
         ),

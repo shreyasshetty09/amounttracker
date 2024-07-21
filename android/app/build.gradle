@@ -56,6 +56,13 @@ android {
     }
 }
 
+dependencies {
+    // Add Firebase Authentication dependency
+    implementation 'com.google.android.gms:play-services-auth:20.3.0'
+}
+
+apply plugin: 'com.google.gms.google-services'
+
 flutter {
     source = "../.."
 }

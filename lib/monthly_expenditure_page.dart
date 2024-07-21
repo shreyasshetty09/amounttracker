@@ -58,70 +58,143 @@ class _MonthlyExpenditurePageState extends State<MonthlyExpenditurePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.grey[200],
       appBar: AppBar(
         title: Text('Monthly Expenditure'),
       ),
-      body: Padding(
-        padding: EdgeInsets.all(16.0),
-        child: Column(
-          children: [
-            DropdownButton<String>(
-              value: _selectedMonth,
-              items: [
-                'January',
-                'February',
-                'March',
-                'April',
-                'May',
-                'June',
-                'July',
-                'August',
-                'September',
-                'October',
-                'November',
-                'December'
-              ]
-                  .map((month) => DropdownMenuItem(
-                        value: month,
-                        child: Text(month),
-                      ))
-                  .toList(),
-              onChanged: (value) {
-                setState(() {
-                  _selectedMonth = value!;
-                  _fetchExpenditures(_selectedMonth);
-                });
-              },
-            ),
-            SizedBox(height: 16.0),
-            Expanded(
-              child: SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: DataTable(
-                  columns: [
-                    DataColumn(label: Text('Expenditure Name')),
-                    DataColumn(label: Text('Amount')),
-                  ],
-                  rows: _expenditures
-                      .map(
-                        (expenditure) => DataRow(
-                          cells: [
-                            DataCell(Text(expenditure['name'])),
-                            DataCell(Text(
-                                '₹${expenditure['amount'].toStringAsFixed(2)}')),
-                          ],
+      body: SingleChildScrollView(
+        child: Padding(
+          padding: EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Card(
+                elevation: 4.0,
+                margin: EdgeInsets.only(bottom: 16.0),
+                child: Padding(
+                  padding: EdgeInsets.all(16.0),
+                  child: Column(
+                    children: [
+                      DropdownButtonFormField<String>(
+                        value: _selectedMonth,
+                        items: [
+                          'January',
+                          'February',
+                          'March',
+                          'April',
+                          'May',
+                          'June',
+                          'July',
+                          'August',
+                          'September',
+                          'October',
+                          'November',
+                          'December'
+                        ]
+                            .map((month) => DropdownMenuItem(
+                                  value: month,
+                                  child: Text(month),
+                                ))
+                            .toList(),
+                        onChanged: (value) {
+                          setState(() {
+                            _selectedMonth = value!;
+                            _fetchExpenditures(_selectedMonth);
+                          });
+                        },
+                        decoration: InputDecoration(
+                          labelText: 'Select Month',
+                          border: OutlineInputBorder(),
                         ),
-                      )
-                      .toList(),
+                      ),
+                      SizedBox(height: 16.0),
+                      Text(
+                        'Monthly Expenditures for $_selectedMonth',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.blueGrey,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
-            ),
-            SizedBox(height: 16.0),
-            Text(
-              'Total Expenditure: ₹${_totalExpenditure.toStringAsFixed(2)}',
-              style: TextStyle(fontSize: 20.0, fontWeight: FontWeight.bold),
-            ),
-          ],
+              SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Container(
+                  decoration: BoxDecoration(
+                    border: Border.all(color: Colors.black, width: 2.0),
+                  ),
+                  child: DataTable(
+                    columns: [
+                      DataColumn(
+                        label: Text(
+                          'Expenditure Name',
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                      DataColumn(
+                        label: Text(
+                          'Amount',
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                    ],
+                    rows: _expenditures
+                        .map(
+                          (expenditure) => DataRow(
+                            cells: [
+                              DataCell(
+                                Text(
+                                  expenditure['name'],
+                                  style: TextStyle(color: Colors.black87),
+                                ),
+                              ),
+                              DataCell(
+                                Text(
+                                  '₹${expenditure['amount'].toStringAsFixed(2)}',
+                                  style: TextStyle(color: Colors.redAccent),
+                                ),
+                              ),
+                            ],
+                          ),
+                        )
+                        .toList(),
+                  ),
+                ),
+              ),
+              SizedBox(height: 16.0),
+              Card(
+                elevation: 4.0,
+                color: Colors.lightGreen[100],
+                child: Padding(
+                  padding: EdgeInsets.all(16.0),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Total Expenditure:',
+                        style: TextStyle(
+                          fontSize: 20.0,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black87,
+                        ),
+                      ),
+                      Text(
+                        '₹${_totalExpenditure.toStringAsFixed(2)}',
+                        style: TextStyle(
+                          fontSize: 20.0,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.redAccent,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
